@@ -4,6 +4,8 @@
 #include "../framework.h"
 #include "Main.h"
 
+#include <iostream>
+
 #define MAX_LOADSTRING 100
 #define SCALE 3
 
@@ -94,6 +96,8 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
 //        В этой функции маркер экземпляра сохраняется в глобальной переменной, а также
 //        создается и выводится главное окно программы.
 //
+
+
 BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
    hInst = hInstance; // Сохранить маркер экземпляра в глобальной переменной
@@ -121,31 +125,6 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
    return TRUE;
 }
-
-void DrawBrick(HDC hdc, COLORREF color, int x, int y)
-{
-    HPEN BrickPen = CreatePen(PS_SOLID, 0, color);
-    HBRUSH BrickBrush =  CreateSolidBrush(color);
-    SelectObject(hdc, BrickPen);
-    SelectObject(hdc, BrickBrush); 
-    RoundRect(hdc, x * SCALE, y * SCALE, (x + 15) * SCALE, (y + 7) * SCALE, 5 * SCALE, 5 * SCALE);
-}
-
-void DrawFrame(HDC hdc)
-{
-    COLORREF color;
-    for(int x = 1; x < 12; x++)
-        for(int y = 1; y < 6; y++)
-        {
-            if(y == 1 or y == 2 or y == 5)
-                color = RGB(255, 80, 255);
-            else
-                color = RGB(0, 255, 255);
-            
-            DrawBrick(hdc, color, (x * 16) + 8, (y * 8) + 6);
-        }
-}
-
 
 //
 //  ФУНКЦИЯ: WndProc(HWND, UINT, WPARAM, LPARAM)
