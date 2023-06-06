@@ -21,8 +21,16 @@ enum EKeyType
     EKT_Space,
 };
 
+//
+
+enum ETimers
+{
+    ET_1 = WM_USER + 1,
+};
+
 //--------Engine Functions-------------------------------------
 
 void EngineInit(HWND hwnd); // Init Engine Function
 void DrawFrame(HDC hdc, RECT &area); // Window Drawing Function
-void GameControl(EKeyType key); // 
+void GameControl(EKeyType key); // Control Game Function
+void OnTick();

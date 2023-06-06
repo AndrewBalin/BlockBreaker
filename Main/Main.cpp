@@ -182,11 +182,16 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             GameControl((EKeyType)1);
             break;
         case VK_SPACE:
-            std::cout << "space" << std::endl;
+            GameControl((EKeyType)2);
             break;
         }
         return 0;
-        
+
+    case WM_TIMER:
+        if(wParam == ET_1)
+            OnTick();
+        return 0;
+    
     case WM_DESTROY:
         PostQuitMessage(0);
         break;
