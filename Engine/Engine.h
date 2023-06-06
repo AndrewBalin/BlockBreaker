@@ -2,5 +2,27 @@
 
 #include <Windows.h>
 
-void Init();
-void DrawFrame(HDC hdc);
+//--------Game Color Scheme------------------------------------
+
+enum EColorScheme
+{ 
+    ECS_Background = RGB(0, 0, 0),
+    ECS_White = RGB(255, 255, 255),
+    ECS_DefaultBreak_01 = RGB(255, 80, 255),
+    ECS_DefaultBreak_02 = RGB(0, 255, 255),
+};
+
+//--------Game Control Scheme----------------------------------
+
+enum EKeyType
+{
+    EKT_Left,
+    EKT_Right,
+    EKT_Space,
+};
+
+//--------Engine Functions-------------------------------------
+
+void EngineInit(HWND hwnd); // Init Engine Function
+void DrawFrame(HDC hdc, RECT &area); // Window Drawing Function
+void GameControl(EKeyType key); // 

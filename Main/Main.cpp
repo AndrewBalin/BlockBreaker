@@ -117,6 +117,8 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
       0, 0, WindowRectangular.right - WindowRectangular.left, WindowRectangular.bottom - WindowRectangular.top, nullptr, nullptr, hInstance, nullptr);
 
+   EngineInit(hWnd); 
+
    if (!hWnd)
       return FALSE;
 
@@ -164,11 +166,26 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             HDC hdc = BeginPaint(hWnd, &ps);
             // TODO: Добавьте сюда любой код прорисовки, использующий HDC...
 
-            DrawFrame(hdc);
+            DrawFrame(hdc, ps.rcPaint);
             
             EndPaint(hWnd, &ps);
         }
         break;
+
+    case WM_KEYDOWN:
+        switch(wParam)
+        {
+        case VK_LEFT:
+            GameControl((EKeyType)0);
+            break;
+        case VK_RIGHT:
+            GameControl((EKeyType)1);
+            break;
+        case VK_SPACE:
+            std::cout << "space" << std::endl;
+            break;
+        }
+        return 0;
         
     case WM_DESTROY:
         PostQuitMessage(0);
