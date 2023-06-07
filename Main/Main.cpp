@@ -181,8 +181,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         case VK_RIGHT:
             GameControl((EKeyType)1);
             break;
-        case VK_SPACE:
+        case VK_UP:
             GameControl((EKeyType)2);
+            break;
+        case VK_DOWN:
+            GameControl((EKeyType)3);
+            break;
+        case VK_SPACE:
+            GameControl((EKeyType)4);
             break;
         }
         return 0;

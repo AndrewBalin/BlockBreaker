@@ -2,6 +2,8 @@
 
 #include <Windows.h>
 
+//
+
 //--------Game Color Scheme------------------------------------
 
 enum EColorScheme
@@ -18,6 +20,8 @@ enum EKeyType
 {
     EKT_Left,
     EKT_Right,
+    EKT_Up,
+    EKT_Dowun,
     EKT_Space,
 };
 
