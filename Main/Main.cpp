@@ -3,6 +3,7 @@
 
 #include "../framework.h"
 #include "Main.h"
+#define _ITERATOR_DEBUG_LEVEL 2
 
 #include <iostream>
 
@@ -10,6 +11,7 @@
 #define SCALE 3
 
 // Глобальные переменные:
+QSEngine Engine;
 HINSTANCE hInst;                                // текущий экземпляр
 WCHAR szTitle[MAX_LOADSTRING];                  // Текст строки заголовка
 WCHAR szWindowClass[MAX_LOADSTRING];            // имя класса главного окна
@@ -117,7 +119,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
       0, 0, WindowRectangular.right - WindowRectangular.left, WindowRectangular.bottom - WindowRectangular.top, nullptr, nullptr, hInstance, nullptr);
 
-   EngineInit(hWnd); 
+   Engine.EngineInit(hWnd); 
 
    if (!hWnd)
       return FALSE;
@@ -166,7 +168,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             HDC hdc = BeginPaint(hWnd, &ps);
             // TODO: Добавьте сюда любой код прорисовки, использующий HDC...
 
-            DrawFrame(hdc, ps.rcPaint);
+            Engine.DrawFrame(hdc, ps.rcPaint);
             
             EndPaint(hWnd, &ps);
         }
@@ -176,26 +178,26 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         switch(wParam)
         {
         case VK_LEFT:
-            GameControl((EKeyType)0);
+            Engine.GameControl((EKeyType)0);
             break;
         case VK_RIGHT:
-            GameControl((EKeyType)1);
+            Engine.GameControl((EKeyType)1);
             break;
         case VK_UP:
-            GameControl((EKeyType)2);
+            Engine.GameControl((EKeyType)2);
             break;
         case VK_DOWN:
-            GameControl((EKeyType)3);
+            Engine.GameControl((EKeyType)3);
             break;
         case VK_SPACE:
-            GameControl((EKeyType)4);
+            Engine.GameControl((EKeyType)4);
             break;
         }
         return 0;
 
     case WM_TIMER:
         if(wParam == ET_1)
-            OnTick();
+            Engine.OnTick();
         return 0;
     
     case WM_DESTROY:

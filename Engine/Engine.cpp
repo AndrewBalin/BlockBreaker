@@ -1,75 +1,9 @@
 #include "Engine.h"
-#define _USE_MATH_DEFINES
-#include <cmath>
 #include "Levels/LevelsData.h"
-#include <iostream>
-#include <map>
-
-//========Level Variables======================================
-
-#define SCALE 3 // Game Scale
-HWND Hwnd; // Window Handle
-
-bool GameStarted = false; // Level State
-
-int FieldPadding = 8; // Padding Behind Window And Field
-int DefaultBrickWidth = 16; // Default Single Brick Width
-int DefaultBrickHeight = 8; // Default Single Brick Height
-
-RECT LevelRect = {
-    FieldPadding * SCALE,
-    FieldPadding * SCALE,
-    (FieldPadding + (DefaultBrickWidth * 12)) * SCALE,
-    (FieldPadding + (DefaultBrickHeight * 14)) * SCALE,
-    
-}; // Bricks Position 
-
-//========Platform Variables===================================
-
-RECT PlatformRect, PrewPlatformRect; // Platform Position
-
-int PlatformInnerWidth = 21; // Platform Inner Width
-int PlatformCircleScale = 8; // Platform Circle Scale
-
-int PlatformWidth = PlatformInnerWidth + 12; // Platform Width
-int PlatformX = (12 * 16) / 2 - PlatformWidth / 2; // Platform X-coordinate
-const int PlatformY = 150; // Platform Y-coordinate: CONST
-
-int PlatformStep = 3; // Platform Moving Step
-
-//========Ball Variables=======================================
-
-std::map<int, double> StartAngle = {
-    {-3, 5 * M_PI / 6},
-    {-2, 3 * M_PI / 4},
-    {-1, 2 * M_PI / 3},
-    {0, M_PI / 2},
-    {1, M_PI / 3},
-    {2, M_PI / 4},
-    {3, M_PI / 6},
-};
-
-RECT BallRect, PrewBallRect; // Ball Position
-RECT BallDirectionRect = {
-    8 * SCALE,
-    426,
-    (16 * 12 - 8) * SCALE,
-    471,
-    
-}; // Ball Direction Position
-
-int BallScale = 4; // Ball Scale
-double BallSpeed = 3.0; // Ball Speed
-int BallDirectionNum = -3; // Ball Direction: <map>StartAngle
-double BallDirection; // Ball Direction: Radian Angle
-double PrewBallDirection; // Previous Ball Direction: Radian Angle
-
-int BallX = PlatformX + PlatformWidth / 2 - 4; // Ball X-coordinate
-int BallY = 148; // Ball Y-coordinate
 
 //--------Init Engine Function---------------------------------
 
-void EngineInit(HWND hwnd)
+void QSEngine::EngineInit(HWND hwnd)
 {
     Hwnd = hwnd;
     PlatformRect = {
@@ -92,12 +26,12 @@ void EngineInit(HWND hwnd)
     SetTimer(Hwnd, ET_1, 50, 0);
 }
 
-//--------Set Pen And Brush Drawing Function-------------------
+//--------Set Pen And Brush Color Function---------------------
 
 HPEN Pen;
 HBRUSH Brush;
 
-void SetPenBrushColor(HDC hdc, EColorScheme color, int pen_width = 0)
+void QSEngine::SetPenBrushColor(HDC hdc, EColorScheme color, int pen_width)
 {
     DeleteObject(Pen); // Clear Pen
     DeleteObject(Brush); // Clear Brush
@@ -109,7 +43,7 @@ void SetPenBrushColor(HDC hdc, EColorScheme color, int pen_width = 0)
 
 //--------Interface Drawing Function---------------------------
 
-void DrawInterface(HDC hdc)
+void QSEngine::DrawInterface(HDC hdc)
 {
     SetPenBrushColor(hdc, ECS_White);
     Rectangle(hdc, 6 * SCALE, 6 * SCALE, 7 * SCALE, (200 - 6) * SCALE); // Left Field Border 
@@ -119,7 +53,7 @@ void DrawInterface(HDC hdc)
 
 //--------Brick Drawing Function-------------------------------
 
-void DrawBrick(HDC hdc, EColorScheme color, int x, int y)
+void QSEngine::DrawBrick(HDC hdc, EColorScheme color, int x, int y)
 {
     SetPenBrushColor(hdc, color);
     RoundRect(hdc, x * SCALE, y * SCALE, (x + DefaultBrickWidth - 1) * SCALE, (y + DefaultBrickHeight - 1) * SCALE, 5 * SCALE, 5 * SCALE);
@@ -129,13 +63,16 @@ void DrawBrick(HDC hdc, EColorScheme color, int x, int y)
 
 EColorScheme BrickColor;
 
-void DrawLevel(HDC hdc)
+void QSEngine::DrawLevel(HDC hdc)
 {
     for(int x = 0; x < 12; x++)
         for(int y = 0; y < 14; y++)
         {            
             switch(Level_01[y][x])
             {
+            case 0:
+                BrickColor = ECS_Background;
+                break;
             case 1:
                 BrickColor = ECS_DefaultBreak_01;
                 break;
@@ -143,14 +80,14 @@ void DrawLevel(HDC hdc)
                 BrickColor = ECS_DefaultBreak_02;
                 break;
             }
-            if(Level_01[y][x])
-                DrawBrick(hdc, BrickColor, (x * 16) + FieldPadding, (y * 8) + FieldPadding);
+            
+            DrawBrick(hdc, BrickColor, (x * 16) + FieldPadding, (y * 8) + FieldPadding);
         }
 }
 
 //--------Platform Drawing Function----------------------------
 
-void DrawPlatform(HDC hdc)
+void QSEngine::DrawPlatform(HDC hdc)
 {
 
     SetPenBrushColor(hdc, ECS_Background);
@@ -179,11 +116,8 @@ void DrawPlatform(HDC hdc)
     
 }
 
-void MovePlatfom()
-{
-
-    std::cout << BallX << ' ' << BallY << std::endl;
-    
+void QSEngine::MovePlatfom()
+{    
     PrewPlatformRect = PlatformRect;
     
     PlatformRect = {
@@ -205,7 +139,7 @@ void MovePlatfom()
 
 //--------Ball Drawing Function--------------------------------
 
-void DrawDirection(HDC hdc, int direction)
+/*void DrawDirection(HDC hdc, int direction)
 {
     if(!GameStarted)
     {
@@ -239,9 +173,9 @@ void ClearDirection(HDC hdc, int direction)
 void ChangeBallDirection()
 {
     
-}
+}*/
 
-void DrawBall(HDC hdc)
+void QSEngine::DrawBall(HDC hdc)
 {
     SetPenBrushColor(hdc, ECS_Background);
     Ellipse(hdc, PrewBallRect.left, PrewBallRect.top, PrewBallRect.right, PrewBallRect.bottom); // Clear Ball
@@ -250,9 +184,7 @@ void DrawBall(HDC hdc)
     Ellipse(hdc, BallRect.left, BallRect.top, BallRect.right, BallRect.bottom); // Ball Drawing
 }
 
-
-
-void MoveBall()
+void QSEngine::MoveBall()
 {
     PrewBallRect = BallRect;    
 
@@ -281,8 +213,26 @@ void MoveBall()
         {
             NextBallY = 148 - (NextBallY - 148);
             BallDirection = -BallDirection;
-        }
-        
+        } else
+            for(int x = 0; x <= 11; x++)
+                for(int y = 13; y >= 0; y--)
+                {
+
+                	
+                    if(!Level_01[y][x])
+                        continue;
+                    
+                    if(NextBallY <= ((y + 1) * DefaultBrickHeight) and (NextBallX + BallScale / 2) >= (x + 1) * DefaultBrickWidth and (NextBallX + BallScale / 2) <= (x + 2) * DefaultBrickWidth)
+                    {    
+                        NextBallY = ((y + 1) * DefaultBrickHeight) - (NextBallY - ((y + 1) * DefaultBrickHeight));
+                        BallDirection = -BallDirection;
+                        Level_01[y][x+1] = 0;
+                        
+                        cout << (x + 1) * DefaultBrickWidth << ' ' << NextBallX << endl;
+                        InvalidateRect(Hwnd, &LevelRect, FALSE);
+                    }
+                    
+                }
 
         BallX = NextBallX, BallY = NextBallY;
     }
@@ -302,7 +252,7 @@ void MoveBall()
 
 //
 
-BITMAP BmImage; // BitMap Image
+/*BITMAP BmImage; // BitMap Image
 HBITMAP HmImage; // HBitMap Image
 
 enum EBonusType // Nums To Bonus Types
@@ -328,11 +278,11 @@ void DrawBonus(HDC hdc, EBonusType type)
     SelectObject(hdcMem, HmImage);
     GetObject((HGDIOBJ)HmImage, sizeof(BmImage), &BmImage);
     BitBlt(hdc, 10, 10, BmImage.bmWidth, BmImage.bmHeight, hdcMem, 0, 0, SRCCOPY);
-}
+}*/
 
 //--------Window Drawing Function------------------------------
 
-void DrawFrame(HDC hdc, RECT &area)
+void QSEngine::DrawFrame(HDC hdc, RECT &area)
 {
 
     RECT IntersectionRect;
@@ -354,7 +304,7 @@ void DrawFrame(HDC hdc, RECT &area)
 
 //--------Control Game Function--------------------------------
 
-void GameControl(EKeyType key)
+void QSEngine::GameControl(EKeyType key)
 {
     switch(key)
     {
@@ -386,7 +336,7 @@ void GameControl(EKeyType key)
 
 //
 
-void OnTick()
+void QSEngine::OnTick()
 {
     MoveBall();
 }
