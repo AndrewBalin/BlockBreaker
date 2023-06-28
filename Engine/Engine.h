@@ -6,6 +6,7 @@
 #include <map>
 #include <Windows.h>
 
+class QSEngine;
 using namespace std;
 
 //--------Game Color Scheme------------------------------------
@@ -29,68 +30,20 @@ enum EKeyType
     EKT_Space,
 };
 
-//
-
 enum ETimers
 {
     ET_1 = WM_USER + 1,
 };
 
-//--------Engine Class-----------------------------------------
+//--------Ball Class-------------------------------------------
 
-
-class QSEngine
+class QBall
 {
-    
 public:
-    void EngineInit(HWND hwnd); // Init Engine Function
-    void DrawFrame(HDC hdc, RECT &area); // Window Drawing Function
-    void GameControl(EKeyType key); // Control Game Function
-    void OnTick();
+    QBall(QSEngine *engine);
     
-private:
-    void SetPenBrushColor(HDC hdc, EColorScheme color, int pen_width = 0); // Set Pen And Brush Color Function
-    void DrawInterface(HDC hdc); // Interface Drawing Function
-    void DrawBrick(HDC hdc, EColorScheme color, int x, int y); // Brick Drawing Function
-    void DrawLevel(HDC hdc); // Level Drawing Function
-    void DrawPlatform(HDC hdc); // Platform Drawing Function
-    void MovePlatfom(); // Platform Redrawing Function
     void DrawBall(HDC hdc); // Ball Drawing Function
-    void MoveBall(); // Ball Moving Function
-
-    //========Level Variables==================================
-
-    #define SCALE 3 // Game Scale
-    HWND Hwnd; // Window Handle
-
-    bool GameStarted = false; // Level State
-
-    int FieldPadding = 8; // Padding Behind Window And Field
-    int DefaultBrickWidth = 16; // Default Single Brick Width
-    int DefaultBrickHeight = 8; // Default Single Brick Height
-
-    RECT LevelRect = {
-        FieldPadding * SCALE,
-        FieldPadding * SCALE,
-        (FieldPadding + (DefaultBrickWidth * 12)) * SCALE,
-        (FieldPadding + (DefaultBrickHeight * 14)) * SCALE,
-    
-    }; // Bricks Position
-    
-    //========Platform Variables===============================
-
-    RECT PlatformRect, PrewPlatformRect; // Platform Position
-
-    int PlatformInnerWidth = 21; // Platform Inner Width
-    int PlatformCircleScale = 8; // Platform Circle Scale
-
-    int PlatformWidth = PlatformInnerWidth + 12; // Platform Width
-    int PlatformX = (12 * 16) / 2 - PlatformWidth / 2; // Platform X-coordinate
-    const int PlatformY = 150; // Platform Y-coordinate: CONST
-
-    int PlatformStep = 3; // Platform Moving Step
-    
-    //========Ball Variables===================================
+    void MoveBall(QSEngine *engine); // Ball Moving Function
 
     std::map<int, double> StartAngle = {
         {-3, 5 * M_PI / 6},
@@ -103,13 +56,7 @@ private:
     };
 
     RECT BallRect, PrewBallRect; // Ball Position
-    RECT BallDirectionRect = {
-        8 * SCALE,
-        426,
-        (16 * 12 - 8) * SCALE,
-        471,
-    
-    }; // Ball Direction Position
+    RECT BallDirectionRect; // Ball Direction Position
 
     int BallScale = 4; // Ball Scale
     double BallSpeed = 3.0; // Ball Speed
@@ -117,8 +64,67 @@ private:
     double BallDirection; // Ball Direction: Radian Angle
     double PrewBallDirection; // Previous Ball Direction: Radian Angle
 
-    int BallX = PlatformX + PlatformWidth / 2 - 4; // Ball X-coordinate
-    int BallY = 148; // Ball Y-coordinate
-    
+    int BallX; // Ball X-coordinate
+    int BallY; // Ball Y-coordinate
 };
 
+//--------Engine Class-----------------------------------------
+
+class QSEngine
+{
+    
+public:
+    QSEngine();
+    
+    void EngineInit(HWND hwnd); // Init Engine Function
+    void DrawFrame(HDC hdc, RECT &area); // Window Drawing Function
+    void GameControl(EKeyType key); // Control Game Function
+    void OnTick();
+    void MovePlatfom(); // Platform Redrawing Function
+    
+    static void SetPenBrushColor(HDC hdc, EColorScheme color, int pen_width = 0); // Set Pen And Brush Color Function
+
+    //========Level Variables==================================
+
+    static const int SCALE = 3; // Game Scale
+    HWND Hwnd; // Window Handle
+
+    QBall Ball; // Ball
+    
+    bool GameStarted = false; // Level State
+
+    static const int FieldPadding = 8; // Padding Behind Window And Field
+    static const int DefaultBrickWidth = 16; // Default Single Brick Width
+    static const int DefaultBrickHeight = 8; // Default Single Brick Height
+    
+    RECT LevelRect = {
+        FieldPadding * SCALE,
+        FieldPadding * SCALE,
+        (FieldPadding + (DefaultBrickWidth * 12)) * SCALE,
+        (FieldPadding + (DefaultBrickHeight * 14)) * SCALE,
+    
+    }; // Bricks Position
+    
+    //========Platform Variables===============================
+    
+    int PlatformInnerWidth = 21; // Platform Inner Width
+
+    int PlatformWidth = PlatformInnerWidth + 12; // Platform Width
+    int PlatformX = (12 * 16) / 2 - PlatformWidth / 2; // Platform X-coordinate
+    static const int PlatformY = 150; // Platform Y-coordinate: CONST
+    
+private:
+    void DrawInterface(HDC hdc); // Interface Drawing Function
+    void DrawBrick(HDC hdc, EColorScheme color, int x, int y); // Brick Drawing Function
+    void DrawLevel(HDC hdc); // Level Drawing Function
+    void DrawPlatform(HDC hdc); // Platform Drawing Function
+    
+    //========Platform Variables===============================
+
+    RECT PlatformRect, PrewPlatformRect; // Platform Position
+    
+    int PlatformCircleScale = 8; // Platform Circle Scale
+
+    int PlatformStep = 3; // Platform Moving Step
+    
+};

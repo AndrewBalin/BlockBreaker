@@ -1,7 +1,109 @@
 #include "Engine.h"
 #include "Levels/LevelsData.h"
 
-//--------Init Engine Function---------------------------------
+//--------Ball Init Function-----------------------------------
+
+QBall::QBall(QSEngine *engine)
+: BallDirectionRect({
+    8 * QSEngine::SCALE,
+    426,
+    (16 * 12 - 8) * QSEngine::SCALE,
+    471,
+    
+}),
+BallX(engine->PlatformX + engine->PlatformWidth / 2 - 4), BallY(148)
+{}
+
+//--------Ball Drawing Function--------------------------------
+
+void QBall::DrawBall(HDC hdc)
+{
+    QSEngine::SetPenBrushColor(hdc, ECS_Background);
+    Ellipse(hdc, PrewBallRect.left, PrewBallRect.top, PrewBallRect.right, PrewBallRect.bottom); // Clear Ball
+    
+    QSEngine::SetPenBrushColor(hdc, ECS_White);
+    Ellipse(hdc, BallRect.left, BallRect.top, BallRect.right, BallRect.bottom); // Ball Drawing
+}
+
+//--------Ball Moving Function---------------------------------
+
+void QBall::MoveBall(QSEngine *engine)
+{
+    PrewBallRect = BallRect;    
+
+    if(engine->GameStarted)
+    {
+        int NextBallX = BallX + (int)(cos(BallDirection) * BallSpeed);
+        int NextBallY = BallY - (int)(sin(BallDirection) * BallSpeed);
+        BallX += (int)(cos(BallDirection) * BallSpeed);
+        BallY -= (int)(sin(BallDirection) * BallSpeed);
+
+        if(NextBallX < 0)
+        {
+            NextBallX = -NextBallX;
+            BallDirection = M_PI - BallDirection;
+        } else if(NextBallX > (16 * 12 - 4))
+        {
+            NextBallX = (16 * 12 - 4) - (NextBallX - (16 * 12 - 4));
+            BallDirection = M_PI - BallDirection;
+        }
+        
+        if(NextBallY < 2)
+        {
+            NextBallY = -NextBallY;
+            BallDirection = -BallDirection;
+        } else if(NextBallY >= 148 and NextBallY <= 149  and NextBallX >= engine->PlatformX and NextBallX <= (engine->PlatformX + engine->PlatformWidth))
+        {
+            NextBallY = 148 - (NextBallY - 148);
+            BallDirection = -BallDirection;
+        } else
+            for(int x = 0; x <= 11; x++)
+                for(int y = 13; y >= 0; y--)
+                {
+
+                	
+                    if(!Level_01[y][x])
+                        continue;
+                    
+                    if(NextBallY <= ((y + 1) * QSEngine::DefaultBrickHeight) and (NextBallX + BallScale / 2) >= (x + 1)
+                        * QSEngine::DefaultBrickWidth and (NextBallX + BallScale / 2) <= (x + 2) * QSEngine::DefaultBrickWidth)
+                    {    
+                        NextBallY = ((y + 1) * QSEngine::DefaultBrickHeight) - (NextBallY - ((y + 1) * QSEngine::DefaultBrickHeight));
+                        BallDirection = -BallDirection;
+                        Level_01[y][x+1] = 0;
+                        
+                        cout << (x + 1) * QSEngine::DefaultBrickWidth << ' ' << NextBallX << endl;
+                        InvalidateRect(engine->Hwnd, &engine->LevelRect, FALSE);
+                    }
+                    
+                }
+
+        BallX = NextBallX, BallY = NextBallY;
+    }
+    
+    
+    BallRect = {
+        (BallX + QSEngine::FieldPadding) * QSEngine::SCALE,
+        (BallY + QSEngine::FieldPadding) * QSEngine::SCALE,
+        (BallX + QSEngine::FieldPadding + BallScale) * QSEngine::SCALE,
+        (BallY + QSEngine::FieldPadding + BallScale) * QSEngine::SCALE,
+    };
+
+    InvalidateRect(engine->Hwnd, &PrewBallRect, FALSE); // Clear Ball
+    InvalidateRect(engine->Hwnd, &BallRect, FALSE); // Redaraw Ball
+    engine->MovePlatfom(); // Update Platform
+}
+//-------------------------------------------------------------
+
+
+
+
+//--------Engine Init Function---------------------------------
+
+QSEngine::QSEngine(): Ball(this)
+{
+    //pass
+}
 
 void QSEngine::EngineInit(HWND hwnd)
 {
@@ -13,15 +115,15 @@ void QSEngine::EngineInit(HWND hwnd)
         (PlatformY + FieldPadding + 8) * SCALE,
     };
 
-    BallRect = {
-        (BallX + FieldPadding) * SCALE,
-        (BallY + FieldPadding) * SCALE,
-        (BallX + FieldPadding + BallScale) * SCALE,
-        (BallY + FieldPadding + BallScale) * SCALE,
+    Ball.BallRect = {
+        (Ball.BallX + FieldPadding) * SCALE,
+        (Ball.BallY + FieldPadding) * SCALE,
+        (Ball.BallX + FieldPadding + Ball.BallScale) * SCALE,
+        (Ball.BallY + FieldPadding + Ball.BallScale) * SCALE,
     };
 
-    BallDirection = StartAngle[BallDirectionNum];
-    PrewBallDirection = BallDirection;
+    Ball.BallDirection = Ball.StartAngle[Ball.BallDirectionNum];
+    Ball.PrewBallDirection = Ball.BallDirection;
 
     SetTimer(Hwnd, ET_1, 50, 0);
 }
@@ -129,7 +231,7 @@ void QSEngine::MovePlatfom()
 
     if(!GameStarted)
     {
-        BallX = PlatformX + PlatformWidth / 2 - 4;
+        Ball.BallX = PlatformX + PlatformWidth / 2 - 4;
     }
     
     InvalidateRect(Hwnd, &PrewPlatformRect, FALSE); // Clear Platform
@@ -175,83 +277,6 @@ void ChangeBallDirection()
     
 }*/
 
-void QSEngine::DrawBall(HDC hdc)
-{
-    SetPenBrushColor(hdc, ECS_Background);
-    Ellipse(hdc, PrewBallRect.left, PrewBallRect.top, PrewBallRect.right, PrewBallRect.bottom); // Clear Ball
-    
-    SetPenBrushColor(hdc, ECS_White);
-    Ellipse(hdc, BallRect.left, BallRect.top, BallRect.right, BallRect.bottom); // Ball Drawing
-}
-
-void QSEngine::MoveBall()
-{
-    PrewBallRect = BallRect;    
-
-    if(GameStarted)
-    {
-        int NextBallX = BallX + (int)(cos(BallDirection) * BallSpeed);
-        int NextBallY = BallY - (int)(sin(BallDirection) * BallSpeed);
-        BallX += (int)(cos(BallDirection) * BallSpeed);
-        BallY -= (int)(sin(BallDirection) * BallSpeed);
-
-        if(NextBallX < 0)
-        {
-            NextBallX = -NextBallX;
-            BallDirection = M_PI - BallDirection;
-        } else if(NextBallX > (16 * 12 - 4))
-        {
-            NextBallX = (16 * 12 - 4) - (NextBallX - (16 * 12 - 4));
-            BallDirection = M_PI - BallDirection;
-        }
-        
-        if(NextBallY < 2)
-        {
-            NextBallY = -NextBallY;
-            BallDirection = -BallDirection;
-        } else if(NextBallY >= 148 and NextBallY <= 149  and NextBallX >= PlatformX and NextBallX <= (PlatformX + PlatformWidth))
-        {
-            NextBallY = 148 - (NextBallY - 148);
-            BallDirection = -BallDirection;
-        } else
-            for(int x = 0; x <= 11; x++)
-                for(int y = 13; y >= 0; y--)
-                {
-
-                	
-                    if(!Level_01[y][x])
-                        continue;
-                    
-                    if(NextBallY <= ((y + 1) * DefaultBrickHeight) and (NextBallX + BallScale / 2) >= (x + 1) * DefaultBrickWidth and (NextBallX + BallScale / 2) <= (x + 2) * DefaultBrickWidth)
-                    {    
-                        NextBallY = ((y + 1) * DefaultBrickHeight) - (NextBallY - ((y + 1) * DefaultBrickHeight));
-                        BallDirection = -BallDirection;
-                        Level_01[y][x+1] = 0;
-                        
-                        cout << (x + 1) * DefaultBrickWidth << ' ' << NextBallX << endl;
-                        InvalidateRect(Hwnd, &LevelRect, FALSE);
-                    }
-                    
-                }
-
-        BallX = NextBallX, BallY = NextBallY;
-    }
-    
-    
-    BallRect = {
-        (BallX + FieldPadding) * SCALE,
-        (BallY + FieldPadding) * SCALE,
-        (BallX + FieldPadding + BallScale) * SCALE,
-        (BallY + FieldPadding + BallScale) * SCALE,
-    };
-
-    InvalidateRect(Hwnd, &PrewBallRect, FALSE); // Clear Ball
-    InvalidateRect(Hwnd, &BallRect, FALSE); // Redaraw Ball
-    MovePlatfom(); // Update Platform
-}
-
-//
-
 /*BITMAP BmImage; // BitMap Image
 HBITMAP HmImage; // HBitMap Image
 
@@ -293,8 +318,8 @@ void QSEngine::DrawFrame(HDC hdc, RECT &area)
     if(IntersectRect(&IntersectionRect, &area, &LevelRect))
         DrawLevel(hdc);
 
-    if(IntersectRect(&IntersectionRect, &area, &BallRect))
-        DrawBall(hdc);
+    if(IntersectRect(&IntersectionRect, &area, &Ball.BallRect))
+        Ball.DrawBall(hdc);
     
     DrawInterface(hdc);
     //DrawDirection(hdc, BallDirectionNum);
@@ -329,7 +354,6 @@ void QSEngine::GameControl(EKeyType key)
         if(!GameStarted)
         {
             GameStarted = true;
-           
         }
     }
 }
@@ -338,5 +362,5 @@ void QSEngine::GameControl(EKeyType key)
 
 void QSEngine::OnTick()
 {
-    MoveBall();
+    Ball.MoveBall(this);
 }
