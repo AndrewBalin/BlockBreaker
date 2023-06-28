@@ -1,172 +1,45 @@
 #include "Engine.h"
 #include "Levels/LevelsData.h"
 
-//--------Ball Init Function-----------------------------------
+//--------Level Init Function----------------------------------
 
-QBall::QBall(QSEngine *engine)
-: BallDirectionRect({
-    8 * QSEngine::SCALE,
-    426,
-    (16 * 12 - 8) * QSEngine::SCALE,
-    471,
+QSLevel::QSLevel()
+:LevelRect({
+    QSEngine::FieldPadding * QSEngine::SCALE,
+    QSEngine::FieldPadding * QSEngine::SCALE,
+    (QSEngine::FieldPadding + (QSEngine::DefaultBrickWidth * 12)) * QSEngine::SCALE,
+    (QSEngine::FieldPadding + (QSEngine::DefaultBrickHeight * 14)) * QSEngine::SCALE,
+}) {}
+
+void QSLevel::Init()
+{
     
-}),
-BallX(engine->PlatformX + engine->PlatformWidth / 2 - 4), BallY(148)
-{}
-
-//--------Ball Drawing Function--------------------------------
-
-void QBall::DrawBall(HDC hdc)
-{
-    QSEngine::SetPenBrushColor(hdc, ECS_Background);
-    Ellipse(hdc, PrewBallRect.left, PrewBallRect.top, PrewBallRect.right, PrewBallRect.bottom); // Clear Ball
-    
-    QSEngine::SetPenBrushColor(hdc, ECS_White);
-    Ellipse(hdc, BallRect.left, BallRect.top, BallRect.right, BallRect.bottom); // Ball Drawing
-}
-
-//--------Ball Moving Function---------------------------------
-
-void QBall::MoveBall(QSEngine *engine)
-{
-    PrewBallRect = BallRect;    
-
-    if(engine->GameStarted)
-    {
-        int NextBallX = BallX + (int)(cos(BallDirection) * BallSpeed);
-        int NextBallY = BallY - (int)(sin(BallDirection) * BallSpeed);
-        BallX += (int)(cos(BallDirection) * BallSpeed);
-        BallY -= (int)(sin(BallDirection) * BallSpeed);
-
-        if(NextBallX < 0)
-        {
-            NextBallX = -NextBallX;
-            BallDirection = M_PI - BallDirection;
-        } else if(NextBallX > (16 * 12 - 4))
-        {
-            NextBallX = (16 * 12 - 4) - (NextBallX - (16 * 12 - 4));
-            BallDirection = M_PI - BallDirection;
-        }
-        
-        if(NextBallY < 2)
-        {
-            NextBallY = -NextBallY;
-            BallDirection = -BallDirection;
-        } else if(NextBallY >= 148 and NextBallY <= 149  and NextBallX >= engine->PlatformX and NextBallX <= (engine->PlatformX + engine->PlatformWidth))
-        {
-            NextBallY = 148 - (NextBallY - 148);
-            BallDirection = -BallDirection;
-        } else
-            for(int x = 0; x <= 11; x++)
-                for(int y = 13; y >= 0; y--)
-                {
-
-                	
-                    if(!Level_01[y][x])
-                        continue;
-                    
-                    if(NextBallY <= ((y + 1) * QSEngine::DefaultBrickHeight) and (NextBallX + BallScale / 2) >= (x + 1)
-                        * QSEngine::DefaultBrickWidth and (NextBallX + BallScale / 2) <= (x + 2) * QSEngine::DefaultBrickWidth)
-                    {    
-                        NextBallY = ((y + 1) * QSEngine::DefaultBrickHeight) - (NextBallY - ((y + 1) * QSEngine::DefaultBrickHeight));
-                        BallDirection = -BallDirection;
-                        Level_01[y][x+1] = 0;
-                        
-                        cout << (x + 1) * QSEngine::DefaultBrickWidth << ' ' << NextBallX << endl;
-                        InvalidateRect(engine->Hwnd, &engine->LevelRect, FALSE);
-                    }
-                    
-                }
-
-        BallX = NextBallX, BallY = NextBallY;
-    }
-    
-    
-    BallRect = {
-        (BallX + QSEngine::FieldPadding) * QSEngine::SCALE,
-        (BallY + QSEngine::FieldPadding) * QSEngine::SCALE,
-        (BallX + QSEngine::FieldPadding + BallScale) * QSEngine::SCALE,
-        (BallY + QSEngine::FieldPadding + BallScale) * QSEngine::SCALE,
-    };
-
-    InvalidateRect(engine->Hwnd, &PrewBallRect, FALSE); // Clear Ball
-    InvalidateRect(engine->Hwnd, &BallRect, FALSE); // Redaraw Ball
-    engine->MovePlatfom(); // Update Platform
-}
-//-------------------------------------------------------------
-
-
-
-
-//--------Engine Init Function---------------------------------
-
-QSEngine::QSEngine(): Ball(this)
-{
-    //pass
-}
-
-void QSEngine::EngineInit(HWND hwnd)
-{
-    Hwnd = hwnd;
-    PlatformRect = {
-        (PlatformX + FieldPadding) * SCALE,
-        (PlatformY + FieldPadding) * SCALE,
-        (PlatformX + FieldPadding + PlatformWidth) * SCALE,
-        (PlatformY + FieldPadding + 8) * SCALE,
-    };
-
-    Ball.BallRect = {
-        (Ball.BallX + FieldPadding) * SCALE,
-        (Ball.BallY + FieldPadding) * SCALE,
-        (Ball.BallX + FieldPadding + Ball.BallScale) * SCALE,
-        (Ball.BallY + FieldPadding + Ball.BallScale) * SCALE,
-    };
-
-    Ball.BallDirection = Ball.StartAngle[Ball.BallDirectionNum];
-    Ball.PrewBallDirection = Ball.BallDirection;
-
-    SetTimer(Hwnd, ET_1, 50, 0);
-}
-
-//--------Set Pen And Brush Color Function---------------------
-
-HPEN Pen;
-HBRUSH Brush;
-
-void QSEngine::SetPenBrushColor(HDC hdc, EColorScheme color, int pen_width)
-{
-    DeleteObject(Pen); // Clear Pen
-    DeleteObject(Brush); // Clear Brush
-    Pen = CreatePen(PS_SOLID, pen_width, color);
-    Brush =  CreateSolidBrush(color);
-    SelectObject(hdc, Pen);
-    SelectObject(hdc, Brush);
-}
-
-//--------Interface Drawing Function---------------------------
-
-void QSEngine::DrawInterface(HDC hdc)
-{
-    SetPenBrushColor(hdc, ECS_White);
-    Rectangle(hdc, 6 * SCALE, 6 * SCALE, 7 * SCALE, (200 - 6) * SCALE); // Left Field Border 
-    Rectangle(hdc, 6 * SCALE, 6 * SCALE, (12 * 16 + FieldPadding) * SCALE, 7 * SCALE); // Top Field Border
-    Rectangle(hdc, (12 * 16 + FieldPadding) * SCALE, 6 * SCALE, (12 * 16 + FieldPadding + 1) * SCALE, (200 - 6) * SCALE); // Right Field Border
 }
 
 //--------Brick Drawing Function-------------------------------
 
-void QSEngine::DrawBrick(HDC hdc, EColorScheme color, int x, int y)
+void QSLevel::DrawBrick(HDC hdc, EColorScheme color, int x, int y)
 {
-    SetPenBrushColor(hdc, color);
-    RoundRect(hdc, x * SCALE, y * SCALE, (x + DefaultBrickWidth - 1) * SCALE, (y + DefaultBrickHeight - 1) * SCALE, 5 * SCALE, 5 * SCALE);
+    QSEngine::SetPenBrushColor(hdc, color);
+    RoundRect(hdc,
+        x * QSEngine::SCALE,
+        y * QSEngine::SCALE,
+        (x + QSEngine::DefaultBrickWidth - 1) * QSEngine::SCALE,
+        (y + QSEngine::DefaultBrickHeight - 1) * QSEngine::SCALE,
+        5 * QSEngine::SCALE, 5 * QSEngine::SCALE);
 }
 
 //--------Level Drawing Function-------------------------------
 
-EColorScheme BrickColor;
-
-void QSEngine::DrawLevel(HDC hdc)
+void QSLevel::Draw(HDC hdc, RECT &area)
 {
+
+    RECT IntersectionRect;
+    EColorScheme BrickColor;
+    
+    if(!IntersectRect(&IntersectionRect, &area, &LevelRect))
+        return;
+    
     for(int x = 0; x < 12; x++)
         for(int y = 0; y < 14; y++)
         {            
@@ -183,63 +56,259 @@ void QSEngine::DrawLevel(HDC hdc)
                 break;
             }
             
-            DrawBrick(hdc, BrickColor, (x * 16) + FieldPadding, (y * 8) + FieldPadding);
+            DrawBrick(hdc, BrickColor, (x * 16) + QSEngine::FieldPadding, (y * 8) + QSEngine::FieldPadding);
         }
 }
 
-//--------Platform Drawing Function----------------------------
+//-------------------------------------------------------------
 
-void QSEngine::DrawPlatform(HDC hdc)
+
+
+
+//--------Platform Init Function-------------------------------
+
+QSPlatform::QSPlatform()
+{}
+
+void QSPlatform::Init()
+{}
+
+//--------Platform Draw Function-------------------------------
+
+void QSPlatform::Draw(const HDC hdc, const RECT &area) const
 {
 
-    SetPenBrushColor(hdc, ECS_Background);
+    RECT IntersectionRect;
+    
+    if(!IntersectRect(&IntersectionRect, &area, &PlatformRect))
+        return;
+    
+    QSEngine::SetPenBrushColor(hdc, ECS_Background);
     Rectangle(hdc, PrewPlatformRect.left, PrewPlatformRect.top, PrewPlatformRect.right, PrewPlatformRect.bottom); // Clear Platform
     
-    SetPenBrushColor(hdc, ECS_DefaultBreak_01);
-    Ellipse(hdc, PlatformRect.left, PlatformRect.top,
-        (PlatformX + FieldPadding + PlatformCircleScale) * SCALE, (PlatformY + FieldPadding + PlatformCircleScale) * SCALE); // Left Ball Drawing
-    Ellipse(hdc, (PlatformX + PlatformInnerWidth + FieldPadding) * SCALE, (PlatformY + FieldPadding) * SCALE,
-        (PlatformX + PlatformInnerWidth + FieldPadding + PlatformCircleScale) * SCALE, (PlatformY + FieldPadding + PlatformCircleScale) * SCALE); // Right Ball Drawing
+    QSEngine::SetPenBrushColor(hdc, ECS_DefaultBreak_01);
+    Ellipse(hdc, PlatformRect.left,
+        PlatformRect.top,
+        (PlatformX + QSEngine::FieldPadding + PlatformCircleScale) * QSEngine::SCALE,
+        (PlatformY + QSEngine::FieldPadding + PlatformCircleScale) * QSEngine::SCALE); // Left Ball Drawing
+    Ellipse(hdc,
+        (PlatformX + PlatformInnerWidth + QSEngine::FieldPadding) * QSEngine::SCALE, (PlatformY + QSEngine::FieldPadding) * QSEngine::SCALE,
+        (PlatformX + PlatformInnerWidth + QSEngine::FieldPadding + PlatformCircleScale) * QSEngine::SCALE,
+        (PlatformY + QSEngine::FieldPadding + PlatformCircleScale) * QSEngine::SCALE); // Right Ball Drawing
     
-    SetPenBrushColor(hdc, ECS_DefaultBreak_02);
-    RoundRect(hdc, (PlatformX + FieldPadding + PlatformCircleScale / 2) * SCALE, (PlatformY + FieldPadding + 2) * SCALE, (PlatformX + PlatformWidth) * SCALE,
-        (PlatformY + FieldPadding + 6) * SCALE, 5 * SCALE, 5 * SCALE); // Platform Rectangle Drawing
+    QSEngine::SetPenBrushColor(hdc, ECS_DefaultBreak_02);
+    RoundRect(hdc,
+        (PlatformX + QSEngine::FieldPadding + PlatformCircleScale / 2) * QSEngine::SCALE,
+        (PlatformY + QSEngine::FieldPadding + 2) * QSEngine::SCALE, (PlatformX + PlatformWidth) * QSEngine::SCALE,
+        (PlatformY + QSEngine::FieldPadding + 6) * QSEngine::SCALE, 5 * QSEngine::SCALE, 5 * QSEngine::SCALE); // Platform Rectangle Drawing
     
-    SetPenBrushColor(hdc, ECS_White, 3);
-    Arc(hdc, (PlatformX + FieldPadding + 2) * SCALE, (PlatformY + FieldPadding + 1) * SCALE, (PlatformX + FieldPadding + 7) * SCALE, (PlatformY + FieldPadding + 6) * SCALE,
-        (PlatformX + FieldPadding + 2) * SCALE, (PlatformY + FieldPadding + 1) * SCALE, (PlatformX + FieldPadding + 1) * SCALE,
-        (PlatformY + FieldPadding + 4) * SCALE); // Ball Highlight Drawing
+    QSEngine::SetPenBrushColor(hdc, ECS_White, 3);
+    Arc(hdc,
+        (PlatformX + QSEngine::FieldPadding + 2) * QSEngine::SCALE, (PlatformY + QSEngine::FieldPadding + 1) * QSEngine::SCALE,
+        (PlatformX + QSEngine::FieldPadding + 7) * QSEngine::SCALE, (PlatformY + QSEngine::FieldPadding + 6) * QSEngine::SCALE,
+        (PlatformX + QSEngine::FieldPadding + 2) * QSEngine::SCALE, (PlatformY + QSEngine::FieldPadding + 1) * QSEngine::SCALE,
+        (PlatformX + QSEngine::FieldPadding + 1) * QSEngine::SCALE,
+        (PlatformY + QSEngine::FieldPadding + 4) * QSEngine::SCALE); // Ball Highlight Drawing
     
-    SetPenBrushColor(hdc, ECS_White);
-    Rectangle(hdc, (PlatformX + FieldPadding + 7) * SCALE, (PlatformY + FieldPadding + 3) * SCALE,                   
-        (PlatformX + PlatformInnerWidth + FieldPadding - 5) * SCALE, (PlatformY + FieldPadding + PlatformCircleScale / 2) * SCALE);             
-    Rectangle(hdc, (PlatformX + PlatformInnerWidth + FieldPadding - 3) * SCALE, (PlatformY + FieldPadding + 3) * SCALE,    
-        (PlatformX + PlatformInnerWidth + FieldPadding - 1) * SCALE, (PlatformY + FieldPadding + PlatformCircleScale / 2) * SCALE); // Rectangle Highlight Drawing
-    
+    QSEngine::SetPenBrushColor(hdc, ECS_White);
+    Rectangle(hdc,
+        (PlatformX + QSEngine::FieldPadding + 7) * QSEngine::SCALE,
+        (PlatformY + QSEngine::FieldPadding + 3) * QSEngine::SCALE,                   
+        (PlatformX + PlatformInnerWidth + QSEngine::FieldPadding - 5) * QSEngine::SCALE,
+        (PlatformY + QSEngine::FieldPadding + PlatformCircleScale / 2) * QSEngine::SCALE);             
+    Rectangle(hdc,
+        (PlatformX + PlatformInnerWidth + QSEngine::FieldPadding - 3) * QSEngine::SCALE,
+        (PlatformY + QSEngine::FieldPadding + 3) * QSEngine::SCALE,    
+        (PlatformX + PlatformInnerWidth + QSEngine::FieldPadding - 1) * QSEngine::SCALE,
+        (PlatformY + QSEngine::FieldPadding + PlatformCircleScale / 2) * QSEngine::SCALE); // Rectangle Highlight Drawing
+
 }
 
-void QSEngine::MovePlatfom()
-{    
+//--------Platform Move Function-------------------------------
+
+void QSPlatform::Move(QSEngine *engine, QBall *ball)
+{
     PrewPlatformRect = PlatformRect;
     
     PlatformRect = {
-        (PlatformX + FieldPadding) * SCALE,
-        (PlatformY + FieldPadding) * SCALE,
-        (PlatformX + FieldPadding + PlatformWidth) * SCALE,
-        (PlatformY + FieldPadding + 8) * SCALE,
+        (PlatformX + QSEngine::FieldPadding) * QSEngine::SCALE,
+        (PlatformY + QSEngine::FieldPadding) * QSEngine::SCALE,
+        (PlatformX + QSEngine::FieldPadding + PlatformWidth) * QSEngine::SCALE,
+        (PlatformY + QSEngine::FieldPadding + 8) * QSEngine::SCALE,
     };
 
-    if(!GameStarted)
+    if(!engine->GameStarted)
     {
-        Ball.BallX = PlatformX + PlatformWidth / 2 - 4;
+        ball->BallX = PlatformX + PlatformWidth / 2 - 4;
     }
     
-    InvalidateRect(Hwnd, &PrewPlatformRect, FALSE); // Clear Platform
-    InvalidateRect(Hwnd, &PlatformRect, FALSE); // Redaraw Platform
+    InvalidateRect(engine->Hwnd, &PrewPlatformRect, FALSE); // Clear Platform
+    InvalidateRect(engine->Hwnd, &PlatformRect, FALSE); // Redaraw Platform
 }
 
+//-------------------------------------------------------------
+
+
+
+
+//--------Ball Init Function-----------------------------------
+
+QBall::QBall(QSEngine *engine, QSPlatform *platform)
+: BallX(platform->PlatformX + platform->PlatformWidth / 2 - 4),
+  BallY(148), BallDirectionRect({
+      8 * QSEngine::SCALE,
+      426,
+      (16 * 12 - 8) * QSEngine::SCALE,
+      471,
+
+  }){}
+
+void QBall::Init()
+{
+    BallRect = {
+        (BallX + QSEngine::FieldPadding) * QSEngine::SCALE,
+        (BallY + QSEngine::FieldPadding) * QSEngine::SCALE,
+        (BallX + QSEngine::FieldPadding + BallScale) * QSEngine::SCALE,
+        (BallY + QSEngine::FieldPadding + BallScale) * QSEngine::SCALE,
+    };
+
+    BallDirection = StartAngle[BallDirectionNum];
+    PrewBallDirection = BallDirection;
+}
 
 //--------Ball Drawing Function--------------------------------
+
+void QBall::Draw(HDC hdc, RECT &area)
+{
+    RECT IntersectionRect;
+
+    if(!IntersectRect(&IntersectionRect, &area, &BallRect))
+        return;
+    
+    QSEngine::SetPenBrushColor(hdc, ECS_Background);
+    Ellipse(hdc, PrewBallRect.left, PrewBallRect.top, PrewBallRect.right, PrewBallRect.bottom); // Clear Ball
+    
+    QSEngine::SetPenBrushColor(hdc, ECS_White);
+    Ellipse(hdc, BallRect.left, BallRect.top, BallRect.right, BallRect.bottom); // Ball Drawing
+}
+
+//--------Ball Moving Function---------------------------------
+
+void QBall::Move(QSEngine *engine, QSPlatform *platform)
+{
+    PrewBallRect = BallRect;    
+
+    if(engine->GameStarted)
+    {
+        int NextBallX = BallX + static_cast<int>(cos(BallDirection) * BallSpeed);
+        int NextBallY = BallY - static_cast<int>(sin(BallDirection) * BallSpeed);
+        
+        BallX += static_cast<int>(cos(BallDirection) * BallSpeed);
+        BallY -= static_cast<int>(sin(BallDirection) * BallSpeed);
+
+        if(NextBallX < 0)
+        {
+            NextBallX = -NextBallX;
+            BallDirection = M_PI - BallDirection;
+        } else if(NextBallX > (16 * 12 - 4))
+        {
+            NextBallX = (16 * 12 - 4) - (NextBallX - (16 * 12 - 4));
+            BallDirection = M_PI - BallDirection;
+        }
+        
+        if(NextBallY < 2)
+        {
+            NextBallY = -NextBallY;
+            BallDirection = -BallDirection;
+        } else if(NextBallY >= 148 and NextBallY <= 149  and NextBallX >= platform->PlatformX and NextBallX <= (platform->PlatformX + platform->PlatformWidth))
+        {
+            NextBallY = 148 - (NextBallY - 148);
+            BallDirection = -BallDirection;
+        } else
+            for(int x = 0; x <= 11; x++)
+                for(int y = 13; y >= 0; y--)
+                {
+                    if(!Level_01[y][x])
+                        continue;
+                    
+                    if(NextBallY <= ((y + 1) * QSEngine::DefaultBrickHeight) and (NextBallX + BallScale / 2) >= (x + 1)
+                        * QSEngine::DefaultBrickWidth and (NextBallX + BallScale / 2) <= (x + 2) * QSEngine::DefaultBrickWidth)
+                    {    
+                        NextBallY = ((y + 1) * QSEngine::DefaultBrickHeight) - (NextBallY - ((y + 1) * QSEngine::DefaultBrickHeight));
+                        BallDirection = -BallDirection;
+                        Level_01[y][x+1] = 0;
+                        
+                        cout << (x + 1) * QSEngine::DefaultBrickWidth << ' ' << NextBallX << endl;
+                        InvalidateRect(engine->Hwnd, &engine->LevelRect, FALSE);
+                    }
+                }
+        BallX = NextBallX;
+        BallY = NextBallY;
+    }
+    
+    BallRect = {
+        (BallX + QSEngine::FieldPadding) * QSEngine::SCALE,
+        (BallY + QSEngine::FieldPadding) * QSEngine::SCALE,
+        (BallX + QSEngine::FieldPadding + BallScale) * QSEngine::SCALE,
+        (BallY + QSEngine::FieldPadding + BallScale) * QSEngine::SCALE,
+    };
+
+    InvalidateRect(engine->Hwnd, &PrewBallRect, FALSE); // Clear Ball
+    InvalidateRect(engine->Hwnd, &BallRect, FALSE); // Redraw Ball
+    platform->Move(engine, this); // Update Platform
+}
+//-------------------------------------------------------------
+
+
+
+
+//--------Engine Init Function---------------------------------
+
+QSEngine::QSEngine(): Ball(this, &Platform)
+{
+    //pass
+}
+
+void QSEngine::Init(HWND hwnd)
+{
+    Hwnd = hwnd;
+    Platform.PlatformRect = {
+        (Platform.PlatformX + FieldPadding) * SCALE,
+        (QSPlatform::PlatformY + FieldPadding) * SCALE,
+        (Platform.PlatformX + FieldPadding + Platform.PlatformWidth) * SCALE,
+        (QSPlatform::PlatformY + FieldPadding + 8) * SCALE,
+    };
+
+    Ball.Init(); // Init Ball
+    SetTimer(Hwnd, ET_1, 50, nullptr); // Set Tick Timer
+}
+
+//--------Set Pen And Brush Color Function---------------------
+
+HPEN Pen;
+HBRUSH Brush;
+
+void QSEngine::SetPenBrushColor(HDC hdc, EColorScheme color, int pen_width)
+{
+    DeleteObject(Pen); // Clear Pen
+    DeleteObject(Brush); // Clear Brush
+    
+    Pen = CreatePen(PS_SOLID, pen_width, color); // Set Pen
+    Brush =  CreateSolidBrush(color); // Set Brush
+    
+    SelectObject(hdc, Pen); // Select Pen
+    SelectObject(hdc, Brush); // Select Brush
+}
+
+//--------Interface Drawing Function---------------------------
+
+void QSEngine::DrawInterface(HDC hdc)
+{
+    SetPenBrushColor(hdc, ECS_White);
+    Rectangle(hdc, 6 * SCALE, 6 * SCALE, 7 * SCALE, (200 - 6) * SCALE); // Left Field Border 
+    Rectangle(hdc, 6 * SCALE, 6 * SCALE, (12 * 16 + FieldPadding) * SCALE, 7 * SCALE); // Top Field Border
+    Rectangle(hdc, (12 * 16 + FieldPadding) * SCALE, 6 * SCALE, (12 * 16 + FieldPadding + 1) * SCALE, (200 - 6) * SCALE); // Right Field Border
+}
 
 /*void DrawDirection(HDC hdc, int direction)
 {
@@ -309,22 +378,11 @@ void DrawBonus(HDC hdc, EBonusType type)
 
 void QSEngine::DrawFrame(HDC hdc, RECT &area)
 {
-
-    RECT IntersectionRect;
-    
-    if(IntersectRect(&IntersectionRect, &area, &PlatformRect))
-        DrawPlatform(hdc);
-
-    if(IntersectRect(&IntersectionRect, &area, &LevelRect))
-        DrawLevel(hdc);
-
-    if(IntersectRect(&IntersectionRect, &area, &Ball.BallRect))
-        Ball.DrawBall(hdc);
+    Level.Draw(hdc, area);
+    Platform.Draw(hdc, area);
+    Ball.Draw(hdc, area);
     
     DrawInterface(hdc);
-    //DrawDirection(hdc, BallDirectionNum);
-    //DrawBonus(hdc, TripleBall);
-    
 }
 
 //--------Control Game Function--------------------------------
@@ -334,17 +392,17 @@ void QSEngine::GameControl(EKeyType key)
     switch(key)
     {
     case EKT_Left: // Move Left
-        if(PlatformX > 0)
+        if(Platform.PlatformX > 0)
         {
-            PlatformX -= PlatformStep;
-            MovePlatfom();
+            Platform.PlatformX -= Platform.PlatformStep;
+            Platform.Move(this, &Ball);
         }
         break;
     case EKT_Right: // Move Right
-        if((PlatformX + PlatformInnerWidth + FieldPadding + 8) * SCALE < (12 * 16 + FieldPadding - 1) * SCALE)
+        if((Platform.PlatformX + Platform.PlatformInnerWidth + FieldPadding + 8) * SCALE < (12 * 16 + FieldPadding - 1) * SCALE)
         {
-            PlatformX += PlatformStep;
-            MovePlatfom();
+            Platform.PlatformX += Platform.PlatformStep;
+            Platform.Move(this, &Ball);
         }
         break;
     case EKT_Up:
@@ -358,9 +416,9 @@ void QSEngine::GameControl(EKeyType key)
     }
 }
 
-//
+//--------On Engine Tick Function------------------------------
 
 void QSEngine::OnTick()
 {
-    Ball.MoveBall(this);
+    Ball.Move(this, &Platform);
 }

@@ -119,7 +119,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
       0, 0, WindowRectangular.right - WindowRectangular.left, WindowRectangular.bottom - WindowRectangular.top, nullptr, nullptr, hInstance, nullptr);
 
-   Engine.EngineInit(hWnd); 
+   Engine.Init(hWnd); 
 
    if (!hWnd)
       return FALSE;
